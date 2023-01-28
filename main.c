@@ -6,6 +6,8 @@
 
 LaunchOption getlaunchoption() { return getchar() - '0'; }
 
+int debug = 0;
+
 void parseArgv(int c, char **v, LaunchOption *lo) {
   if (c == 1) {
     printf("Choose an option:\r\n\t1. Server\r\n\t2. Client\r\n\t0. QUIT\r\n");
@@ -17,12 +19,14 @@ void parseArgv(int c, char **v, LaunchOption *lo) {
     *lo = UNKNOWN_LAUNCH_OPTION;
     return;
   }
-  switch (*v[1]) {
+  switch (*v[1]++) {
   case 's':
     *lo = SERVER;
     break;
   case 'c':
     *lo = CLIENT;
+    if (*v[1] == 'd')
+      debug = 1;
     break;
   default:
     *lo = UNKNOWN_LAUNCH_OPTION;
@@ -48,7 +52,7 @@ int main(int argc, char **argv) {
     r = server();
     break;
   case CLIENT:
-    r = client();
+    r = client(debug);
     break;
   case UNKNOWN_LAUNCH_OPTION:
   default:
