@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 typedef enum {
+  echo,
   register_client,
   unregister,
   connect,
