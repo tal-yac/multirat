@@ -1,5 +1,6 @@
+#undef UNICODE
+
 #include "net_util.h"
-#include "WS2tcpip.h"
 #include "stdio.h"
 #include "server.h"
 #include "client.h"
@@ -34,7 +35,7 @@ void parseArgv(int c, char **v, LaunchOption *lo) {
   }
 }
 
-int main(int argc, char **argv) {
+int __cdecl main(int argc, char **argv) {
   // initializing winsock
   WSADATA wsa;
   if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
