@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#define SIZE_OF_RAT_PACKET_DATA(p) (sizeof(p) - sizeof(ratpacket_t))
+
 typedef enum {
   echo,
   register_client,
@@ -22,7 +24,7 @@ typedef struct __attribute__((packed)) {
   uint8_t op;
   uint64_t data_len;
   uint8_t data[];
-} ratpakcet_t;
+} ratpacket_t;
 
 typedef struct {
   char *name;
