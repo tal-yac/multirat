@@ -21,5 +21,5 @@ server.o: server.h server.c
 	gcc ${CCFLAGS} server.c -o server.o
 
 .PHONEY: clean
-clean: 
+clean:
 	del /Q /F *.o *.exe
