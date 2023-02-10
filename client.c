@@ -1,6 +1,31 @@
 #include "client.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+static int readandsend(int debug, SOCKET conn) {
+  static char msg[DEFAULT_BUFLEN];
+  msg[DEFAULT_BUFLEN - 1] = '\0';
+  ratpacket_t *p = (ratpacket_t *)msg;
+  printf("enter opcode: ");
+  fgets((char *)p, sizeof(p->op) + 2, stdin);
+  p->op = atoi((char *)p);
+  printf("enter message: ");
+  fgets((char *)p->data, SIZE_OF_RAT_PACKET_DATA(msg) - 1, stdin);
+  p->data_len = strlen((char *)p->data) + 1;
+  if (send(conn, (char *)p, sizeof(ratpacket_t) + p->data_len, 0) ==
+      SOCKET_ERROR) {
+    if (debug)
+      printf("send failed, error: %d\n", WSAGetLastError());
+    closesocket(conn);
+    return 1;
+  }
+  if (debug)
+    printf("sent\n");
+  return 0;
+}
 
 int client(int debug) {
   AddrInfo *result, *ptr, hints;
@@ -34,30 +59,29 @@ int client(int debug) {
       printf("error: unable to connect to the server\n");
     return 1;
   }
-  char msg[] = "hello this is client\r\n";
   char buf[DEFAULT_BUFLEN];
-  if (send(conn, msg, (int)strlen(msg), 0) == SOCKET_ERROR) {
-    if (debug)
-      printf("send failed, error: %d\n", WSAGetLastError());
-    closesocket(conn);
-    return 1;
-  }
-  printf("sent");
-  int recbytes;
-  do {
-    recbytes = recv(conn, buf, DEFAULT_BUFLEN, 0);
-    if (recbytes > 0) {
-      if (debug)
-        printf("%s\n", buf);
+  ratpacket_t *p = (ratpacket_t *)buf;
+  while (1) {
+    if (readandsend(debug, conn))
       break;
-    } else if (recbytes == 0) {
+    int recbytes = recv(conn, (char *)p, sizeof(ratpacket_t), 0);
+    if (recbytes == 0) {
       if (debug)
         printf("connection closed");
-    } else {
+      break;
+    }
+    if (recbytes < 0) {
       if (debug)
         printf("recv failed, error: %d\n", WSAGetLastError());
+      break;
     }
-  } while (recbytes > 0);
+    if (p->op == echo) {
+      recv(conn, (char *)p->data, p->data_len, 0);
+      printf("%s", p->data);
+    }
+    if (strcmp((char *)p->data, "exit\n") == 0)
+      break;
+  }
   if (shutdown(conn, SD_SEND) == SOCKET_ERROR) {
     if (debug)
       printf("shutdown failed, error: %d", WSAGetLastError());
