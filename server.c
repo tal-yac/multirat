@@ -67,11 +67,12 @@ int server() {
       closesocket(client);
       return 1;
     }
-    if (p->op == echo) {
-      sentbytes = recv(client, (char *) p->data, p->data_len, 0);
+    if (p->op == RAT_PACKET_ECHO) {
+      sentbytes = recv(client, (char *)p->data, p->data_len, 0);
       printf("%s\n", p->data);
       fflush(stdout);
-      if (send(client,  (char *) p, sizeof(*p) + p->data_len, 0) == SOCKET_ERROR) {
+      if (send(client, (char *)p, sizeof(*p) + p->data_len, 0) ==
+          SOCKET_ERROR) {
         printf("send failed, error: %d", WSAGetLastError());
         closesocket(client);
         return 1;
