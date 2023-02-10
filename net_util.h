@@ -22,5 +22,3 @@ typedef enum options {
 } LaunchOption;
 
 void setaddrinfo(AddrInfo *, LaunchOption);
-void setaddrinfoserver(AddrInfo *);
-void setaddrinfoclient(AddrInfo *);
