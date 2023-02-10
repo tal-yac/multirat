@@ -1,7 +1,8 @@
 all: main
 
 CFLAGS := -g -std=gnu11
-CCFLAGS := -c ${CFLAGS}
+WARNNINGS := -Wall -Wextra -Werror
+CCFLAGS := -c ${CFLAGS} ${WARNNINGS}
 WIN_TCPIP_LIB := Ws2_32
 
 main: main.o net_util.o server.o client.o
