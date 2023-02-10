@@ -8,8 +8,6 @@
 #define DEFAULT_PORT "8000"
 #define DEFAULT_BUFLEN 64
 
-#pragma comment (lib, "Ws2_32.lib")
-
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include "ratpacket.h"
