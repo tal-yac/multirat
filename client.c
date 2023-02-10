@@ -4,17 +4,23 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-static int readandsend(int debug, SOCKET conn) {
+static ratpacket_t *readratpacket() {
   static char msg[DEFAULT_BUFLEN];
   msg[DEFAULT_BUFLEN - 1] = '\0';
   ratpacket_t *p = (ratpacket_t *)msg;
-  printf("enter opcode: ");
+  printf("enter opcode: \n");
+#define _(s, v, n) printf("%d. %s\n", ((v) + 1), n);
+  FOREACH_RAT_OPCODE
+#undef _
   fgets((char *)p, sizeof(p->op) + 2, stdin);
-  p->op = atoi((char *)p);
-  printf("enter message: ");
+  p->op = atoi((char *)p) - 1;
+  printf("enter data: ");
   fgets((char *)p->data, SIZE_OF_RAT_PACKET_DATA(msg) - 1, stdin);
   p->data_len = strlen((char *)p->data) + 1;
+  return p;
+}
+
+static int sendratpacket(int debug, SOCKET conn, ratpacket_t *p) {
   if (send(conn, (char *)p, sizeof(ratpacket_t) + p->data_len, 0) ==
       SOCKET_ERROR) {
     if (debug)
@@ -62,7 +68,10 @@ int client(int debug) {
   char buf[DEFAULT_BUFLEN];
   ratpacket_t *p = (ratpacket_t *)buf;
   while (1) {
-    if (readandsend(debug, conn))
+    ratpacket_t *puser = readratpacket();
+    if (puser->op == RAT_PACKET_DISCONNECT)
+      break;
+    if (sendratpacket(debug, conn, puser))
       break;
     int recbytes = recv(conn, (char *)p, sizeof(ratpacket_t), 0);
     if (recbytes == 0) {
@@ -75,12 +84,10 @@ int client(int debug) {
         printf("recv failed, error: %d\n", WSAGetLastError());
       break;
     }
-    if (p->op == echo) {
+    if (p->op == RAT_PACKET_ECHO) {
       recv(conn, (char *)p->data, p->data_len, 0);
       printf("%s", p->data);
     }
-    if (strcmp((char *)p->data, "exit\n") == 0)
-      break;
   }
   if (shutdown(conn, SD_SEND) == SOCKET_ERROR) {
     if (debug)
