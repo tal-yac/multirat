@@ -1,10 +1,12 @@
+#pragma once
+
 #include <stdint.h>
 
 typedef enum {
   echo,
   register_client,
   unregister,
-  connect,
+  connect_client,
   disconnect,
   keylog,
   turn_off,
