@@ -5,20 +5,28 @@ WARNNINGS := -Wall -Wextra -Werror
 CCFLAGS := -c ${CFLAGS} ${WARNINGS}
 WIN_TCPIP_LIB := Ws2_32
 
-main: main.o net_util.o server.o client.o
-	gcc ${CFLAGS} main.o net_util.o server.o client.o -o main -l${WIN_TCPIP_LIB}
+ifndef LOG_LEVEL
+	LOG_LEVEL := 0
+endif
+
+CCFLAGS += -DLOG_LEVEL=${LOG_LEVEL}
+
+OBJECTS := main.o net_util.o server.o client.o
+
+main: ${OBJECTS}
+	gcc ${CFLAGS} ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
 
 main.o: main.c net_util.h server.h client.h
-	gcc ${CCFLAGS} main.c -o main.o
+	gcc ${CCFLAGS} $< -o $@
 
-net_util.o: net_util.h net_util.c
-	gcc ${CCFLAGS} net_util.c -o net_util.o
+net_util.o: net_util.c net_util.h
+	gcc ${CCFLAGS} $< -o $@
 
-client.o: client.h client.c
-	gcc ${CCFLAGS} client.c -o client.o
+client.o: client.c client.h log.h
+	gcc ${CCFLAGS} $< -o $@
 
-server.o: server.h server.c
-	gcc ${CCFLAGS} server.c -o server.o
+server.o: server.c server.h
+	gcc ${CCFLAGS} $< -o $@
 
 .PHONEY: clean
 clean:
