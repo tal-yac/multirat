@@ -2,9 +2,7 @@
 
 #include <stdint.h>
 
-#define SIZE_OF_RAT_PACKET_DATA(p) (sizeof(p) - sizeof(ratpacket_t))
-
-#define OP_CODE_MAX_LEN 3
+#define RAT_OPCODE_MAX_LEN 3 // max is 255 which is 3 bytes
 
 #define FOREACH_RAT_OPCODE                                                     \
   _(ECHO, 0, "Echo")                                                           \
