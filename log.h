@@ -8,7 +8,7 @@
 #define LOG_DEBUG 1
 
 #define LOG(f, ...)                                                            \
-  fprintf(LOG_FILE, "%s::%s %d " f "\n", __FILE__, __FUNCTION__, __LINE__,    \
+  fprintf(LOG_FILE, "%s::%s:%d " f "\n", __FILE__, __FUNCTION__, __LINE__,    \
           ##__VA_ARGS__)
 
 #if LOG_LEVEL >= LOG_DEBUG
