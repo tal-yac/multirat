@@ -1,85 +1,143 @@
 #include "server.h"
 
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <winsock2.h>
 
-static SOCKET acceptclient() {
+static void init_server_socket(SOCKET *server) {
   AddrInfo hints;
   AddrInfo *result = NULL;
   setaddrinfo(&hints, SERVER);
   if (getaddrinfo(NULL, DEFAULT_PORT, &hints, &result) != 0) {
-    printf("error: %d\n", WSAGetLastError());
-    return INVALID_SOCKET;
+    LOG_ERR("getaddrinfo failed %d", WSAGetLastError());
+    *server = INVALID_SOCKET;
+    return;
   }
-  SOCKET server =
-      socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-  if (server == INVALID_SOCKET) {
+  *server = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+  if (*server == INVALID_SOCKET) {
     printf("error: %d\n", WSAGetLastError());
     freeaddrinfo(result);
-    return INVALID_SOCKET;
+    return;
   }
   // binding the socket
-  if (bind(server, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR) {
+  if (bind(*server, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR) {
     printf("bind failed, error: %d\n", WSAGetLastError());
     freeaddrinfo(result);
-    closesocket(server);
-    return INVALID_SOCKET;
+    closesocket(*server);
+    *server = INVALID_SOCKET;
+    return;
   }
   freeaddrinfo(result);
   result = NULL;
   // listening
   printf("listening...\n");
-  if (listen(server, SOMAXCONN) == SOCKET_ERROR) {
+  if (listen(*server, SOMAXCONN) == SOCKET_ERROR) {
     printf("listen failed, error: %d\n", WSAGetLastError());
-    closesocket(server);
-    return INVALID_SOCKET;
+    *server = INVALID_SOCKET;
+    closesocket(*server);
+    return;
   }
+}
+
+static SOCKET accept_client(SOCKET server) {
   // accepting a connection
-  printf("accetping...\n");
+  LOG_DEBUG("accetping...\n");
   SOCKET client = accept(server, NULL, NULL);
   if (client == INVALID_SOCKET) {
-    printf("accept failed, error: %d", WSAGetLastError());
+    LOG_ERR("accept failed, error: %d", WSAGetLastError());
     closesocket(server);
     return INVALID_SOCKET;
   }
-  printf("accepted\n");
+  LOG_DEBUG("accepted\n");
   closesocket(server);
   return client;
 }
 
-int server() {
-  // creating the server socket
-  SOCKET client = acceptclient();
-  // communicate
-  char buf[DEFAULT_BUFLEN];
-  memset(buf, 0, DEFAULT_BUFLEN);
-  ratpacket_t *p = (ratpacket_t *)buf;
+static void *read_ratpacket(ratpacket_t *p) {
+  printf("enter opcode: \n");
+#define _(s, v, n) printf("%d. %s\n", ((v) + 1), n);
+  FOREACH_RAT_OPCODE
+#undef _
+  if (fgets((char *)p, OP_CODE_MAX_LEN + 2, stdin) == NULL) {
+    return NULL;
+  }
+  p->op = atoi((char *)p) - 1;
+  printf("enter data: ");
+  fgets((char *)p->data, DEFAULT_BUFLEN - sizeof(*p), stdin);
+  p->data_len = strlen((char *)p->data) + 1;
+  return p;
+}
+
+static void handle_client(SOCKET client) {
+  char bufc[DEFAULT_BUFLEN], bufs[DEFAULT_BUFLEN];
+  memset(bufc, 0, DEFAULT_BUFLEN);
+  memset(bufs, 0, DEFAULT_BUFLEN);
+  ratpacket_t *ps = (ratpacket_t *)bufs;
+  ratpacket_t *pc = (ratpacket_t *)bufc;
   while (1) {
-    int sentbytes = recv(client, buf, sizeof(ratpacket_t), 0);
-    if (sentbytes == 0) {
-      printf("closing connection...");
+    if (!read_ratpacket(ps)) {
+      LOG_ERR("read rat packet from user failed");
       break;
     }
-    if (sentbytes < 0) {
-      printf("recv failed, error: %d", WSAGetLastError());
-      closesocket(client);
-      return 1;
-    }
-    if (p->op == RAT_PACKET_ECHO) {
-      sentbytes = recv(client, (char *)p->data, p->data_len, 0);
-      printf("%s\n", p->data);
-      fflush(stdout);
-      if (send(client, (char *)p, sizeof(*p) + p->data_len, 0) ==
+    switch (ps->op) {
+    case RAT_PACKET_DISCONNECT:
+      return;
+    case RAT_PACKET_ECHO:
+      printf("%s", pc->data);
+      if (send(client, (char *)ps, sizeof(*ps) + ps->data_len, 0) ==
           SOCKET_ERROR) {
-        printf("send failed, error: %d", WSAGetLastError());
-        closesocket(client);
-        return 1;
+        LOG_ERR("send failed with %d", WSAGetLastError());
+        break;
       }
-      printf("echo completed\n");
+      LOG_DEBUG("sent");
+      int recbytes = recv(client, (char *)pc, sizeof(*pc), 0);
+      if (recbytes == 0) {
+        LOG_DEBUG("connection closed");
+        break;
+      }
+      if (recbytes < 0) {
+        LOG_ERR("recv failed with %d", WSAGetLastError());
+        break;
+      }
+      if (pc->op != RAT_PACKET_ECHO) {
+        LOG_ERR("unexpected op code - expected %s (%d) received %s (%d)",
+                rat_opcode_to_str(ps->op), ps->op, rat_opcode_to_str(pc->op),
+                pc->op);
+        break;
+      }
+      recbytes = recv(client, (char *)pc->data, pc->data_len, 0);
+      if (recbytes == 0) {
+        LOG_DEBUG("connection closed");
+        break;
+      }
+      if (recbytes < 0) {
+        LOG_ERR("recv failed with %d", WSAGetLastError());
+        break;
+      }
+      printf("%s", pc->data);
+      break;
+    default:
+      LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(ps->op),
+                ps->op);
+      break;
     }
   }
+}
+
+int server() {
+  SOCKET server;
+  init_server_socket(&server);
+  if (server == INVALID_SOCKET) {
+    LOG_ERR("init server socket failed");
+    return 1;
+  }
+  SOCKET client = accept_client(server);
+  if (client == INVALID_SOCKET) {
+    return 1;
+  }
+  handle_client(client);
   if (shutdown(client, SD_SEND) == SOCKET_ERROR) {
     printf("shutdown failed, error: %d", WSAGetLastError());
     closesocket(client);
