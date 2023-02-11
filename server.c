@@ -60,7 +60,7 @@ static void *read_ratpacket(ratpacket_t *p) {
 #define _(s, v, n) printf("%d. %s\n", ((v) + 1), n);
   FOREACH_RAT_OPCODE
 #undef _
-  if (fgets((char *)p, OP_CODE_MAX_LEN + 2, stdin) == NULL) {
+  if (fgets((char *)p, RAT_OPCODE_MAX_LEN + 2, stdin) == NULL) {
     return NULL;
   }
   p->op = atoi((char *)p) - 1;
