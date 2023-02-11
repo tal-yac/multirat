@@ -4,6 +4,8 @@
 
 #define SIZE_OF_RAT_PACKET_DATA(p) (sizeof(p) - sizeof(ratpacket_t))
 
+#define OP_CODE_MAX_LEN 3
+
 #define FOREACH_RAT_OPCODE                                                     \
   _(ECHO, 0, "Echo")                                                           \
   _(REGISTER_CLIENT, 1, "Register_client")                                     \
@@ -24,6 +26,8 @@ typedef enum {
   FOREACH_RAT_OPCODE
 #undef _
 } op_codes;
+
+char *rat_opcode_to_str(op_codes op);
 
 typedef struct __attribute__((packed)) {
   uint8_t op;
