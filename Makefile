@@ -22,10 +22,10 @@ main.o: main.c net_util.h server.h client.h
 net_util.o: net_util.c net_util.h
 	gcc ${CCFLAGS} $< -o $@
 
-client.o: client.c client.h log.h
+client.o: client.c client.h log.h commands.h
 	gcc ${CCFLAGS} $< -o $@
 
-server.o: server.c server.h log.h
+server.o: server.c server.h log.h commands.h
 	gcc ${CCFLAGS} $< -o $@
 
 ratpacket.o: ratpacket.c ratpacket.h

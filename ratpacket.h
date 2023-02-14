@@ -14,10 +14,11 @@
   _(TURN_OFF, 6, "Turn_off")                                                   \
   _(TURN_ON, 7, "Turn_on")                                                     \
   _(RESTART, 8, "Restart")                                                     \
-  _(FILE, 9, "File")                                                           \
-  _(REGISTRY, 10, "Registry")                                                  \
-  _(CMD, 11, "Cmd")                                                            \
-  _(ALERT, 12, "Alert")
+  _(SHUTDOWN, 9, "Shutdown")                                                   \
+  _(FILE, 10, "File")                                                          \
+  _(REGISTRY, 11, "Registry")                                                  \
+  _(CMD, 12, "Cmd")                                                            \
+  _(ALERT, 13, "Alert")
 
 typedef enum {
 #define _(s, v, n) RAT_PACKET_##s = (v),
