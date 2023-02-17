@@ -1,3 +1,5 @@
 .history/
+refs/
+
 *.o
 *.exe
