@@ -1,3 +1,4 @@
+#include "commands.h"
 #include <Windows.h>
 #include <minwindef.h>
 #include <winreg.h>
