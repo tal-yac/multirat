@@ -41,7 +41,7 @@ typedef struct {
 } entry_t;
 
 typedef struct {
-  char *title;
-  char *text;
+  char title[15];
+  char text[35];
   int amount;
 } alert_t;
