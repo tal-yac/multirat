@@ -39,3 +39,9 @@ typedef struct {
   uint64_t content_len;
   uint8_t content[];
 } entry_t;
+
+typedef struct {
+  char *title;
+  char *text;
+  int amount;
+} alert_t;
