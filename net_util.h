@@ -1,13 +1,10 @@
 #pragma once
 
-#define WINVER 0x0A00
-#define _WIN32_WINNT 0x0A00
-#define WIN32_LEAN_AND_MEAN
-
 #define LOCAL_HOST "127.0.0.1"
 #define DEFAULT_PORT "8000"
 #define DEFAULT_BUFLEN 64
 
+#include "winapi.h"
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include "ratpacket.h"
