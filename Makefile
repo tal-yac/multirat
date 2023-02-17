@@ -11,7 +11,7 @@ endif
 
 CCFLAGS += -DLOG_LEVEL=${LOG_LEVEL}
 
-OBJECTS := main.o net_util.o server.o client.o ratpacket.o
+OBJECTS := main.o net_util.o server.o client.o ratpacket.o commands.o
 
 main: ${OBJECTS}
 	gcc ${CFLAGS} ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
@@ -29,6 +29,9 @@ server.o: server.c server.h log.h commands.h
 	gcc ${CCFLAGS} $< -o $@
 
 ratpacket.o: ratpacket.c ratpacket.h
+	gcc ${CCFLAGS} $< -o $@
+
+commands.o: commands.h commands.h
 	gcc ${CCFLAGS} $< -o $@
 
 .PHONEY: clean
