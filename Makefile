@@ -31,7 +31,7 @@ server.o: server.c server.h log.h commands.h
 ratpacket.o: ratpacket.c ratpacket.h
 	gcc ${CCFLAGS} $< -o $@
 
-commands.o: commands.h commands.h
+commands.o: commands.c commands.h
 	gcc ${CCFLAGS} $< -o $@
 
 .PHONEY: clean
