@@ -42,6 +42,5 @@ int uninstall_to_registry(char *name) {
 }
 
 void popup(const char *title, const char *text) {
-  MessageBoxA(NULL, text, title,
-			MB_ICONWARNING);
+  MessageBoxA(NULL, text, title, MB_ICONWARNING);
 }
