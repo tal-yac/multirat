@@ -37,7 +37,7 @@ typedef struct __attribute__((packed)) {
 typedef struct {
   char *name;
   uint64_t content_len;
-  uint8_t content[];
+  uint8_t *content;
 } entry_t;
 
 typedef struct {
