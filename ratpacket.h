@@ -11,8 +11,8 @@
   _(CONNECT_CLIENT, 3, "Connect_client")                                       \
   _(DISCONNECT, 4, "Disconnect")                                               \
   _(KEYLOG, 5, "Keylog")                                                       \
-  _(TURN_OFF, 6, "Turn_off")                                                   \
-  _(TURN_ON, 7, "Turn_on")                                                     \
+  _(TURN_OFF, 6, "Keylog_off")                                                 \
+  _(TURN_ON, 7, "Keylog_on")                                                   \
   _(RESTART, 8, "Restart")                                                     \
   _(SHUTDOWN, 9, "Shutdown")                                                   \
   _(FILE, 10, "File")                                                          \
