@@ -1,5 +1,3 @@
-all: main
-
 CFLAGS := -g -std=gnu11
 WARNNINGS := -Wall -Wextra -Werror
 CCFLAGS := -c ${CFLAGS} ${WARNINGS}
@@ -11,13 +9,13 @@ endif
 
 CCFLAGS += -DLOG_LEVEL=${LOG_LEVEL}
 
-OBJECTS := main.o net_util.o server.o client.o ratpacket.o commands.o
+OBJECTS := net_util.o ratpacket.o commands.o
 
-main: ${OBJECTS}
-	gcc ${CFLAGS} ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
+server: server.o ${OBJECTS}
+	gcc ${CFLAGS} $< ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
 
-main.o: main.c net_util.h server.h client.h
-	gcc ${CCFLAGS} $< -o $@
+client: client.o ${OBJECTS}
+	gcc ${CFLAGS} $< ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
 
 net_util.o: net_util.c net_util.h
 	gcc ${CCFLAGS} $< -o $@

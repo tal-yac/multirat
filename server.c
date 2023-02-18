@@ -207,23 +207,28 @@ static void handle_client(SOCKET client) {
   }
 }
 
-int server() {
+int main() {
+  WSADATA wsa;
+  if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+    LOG_ERR("init error: %d\n", WSAGetLastError());
+    return 1;
+  }
   SOCKET server;
   init_server_socket(&server);
   if (server == INVALID_SOCKET) {
     LOG_ERR("init server socket failed");
-    return 1;
+    goto exit;
   }
   SOCKET client = accept_client(server);
   if (client == INVALID_SOCKET) {
-    return 1;
+    goto exit;
   }
   handle_client(client);
   if (shutdown(client, SD_SEND) == SOCKET_ERROR) {
-    printf("shutdown failed, error: %d", WSAGetLastError());
-    closesocket(client);
-    return 1;
+    LOG_ERR("shutdown failed, error: %d", WSAGetLastError());
   }
   closesocket(client);
+exit:
+  WSACleanup();
   return 0;
 }
