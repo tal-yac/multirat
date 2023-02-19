@@ -12,7 +12,7 @@ CCFLAGS += -DLOG_LEVEL=${LOG_LEVEL}
 OBJECTS := net_util.o ratpacket.o commands.o
 
 server: server.o ${OBJECTS}
-	gcc ${CFLAGS} $< ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
+	gcc ${CFLAGS} $< ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB} -lpthread
 
 client: client.o ${OBJECTS}
 	gcc ${CFLAGS} $< ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
