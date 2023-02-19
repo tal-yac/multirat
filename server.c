@@ -6,8 +6,6 @@
 #include <string.h>
 #include <winsock2.h>
 
-SOCKET client;
-
 static void init_server_socket(SOCKET *server) {
   AddrInfo hints;
   AddrInfo *result = NULL;
@@ -58,6 +56,7 @@ static SOCKET accept_client(SOCKET server) {
 }
 
 static void *client_input_handler(void *vargp) {
+  SOCKET client = (SOCKET)vargp;
   char client_buf[DEFAULT_BUFLEN];
   ratpacket_t *p = (ratpacket_t *)client_buf;
   int allocated = 0;
@@ -209,7 +208,8 @@ static void *read_ratpacket(ratpacket_t *p, int *allocated) {
 
 static void handle_client(SOCKET client) {
   pthread_t client_recv_thread;
-  pthread_create(&client_recv_thread, NULL, client_input_handler, NULL);
+  pthread_create(&client_recv_thread, NULL, client_input_handler,
+                 (void *)client);
   char server_buf[DEFAULT_BUFLEN];
   memset(server_buf, 0, DEFAULT_BUFLEN);
   ratpacket_t *p = (ratpacket_t *)server_buf;
@@ -239,21 +239,32 @@ int main() {
     return 1;
   }
   SOCKET server;
+  SOCKET clients[MAX_CLIENTS];
+  for (int i = 0; i < MAX_CLIENTS; i++) {
+    clients[i] = INVALID_SOCKET;
+  }
   init_server_socket(&server);
   if (server == INVALID_SOCKET) {
     LOG_ERR("init server socket failed");
     goto exit;
   }
-  client = accept_client(server);
-  if (client == INVALID_SOCKET) {
-    goto exit;
+  for (int i = 0; i < MAX_CLIENTS; i++) {
+    clients[i] = accept_client(server);
+    if (clients[i] == INVALID_SOCKET) {
+      goto exit;
+    }
+    handle_client(clients[i]);
   }
-  handle_client(client);
-  if (shutdown(client, SD_SEND) == SOCKET_ERROR) {
-    LOG_ERR("shutdown failed, error: %d", WSAGetLastError());
-  }
-  closesocket(client);
 exit:
+  for (int i = 0; i < MAX_CLIENTS; i++) {
+    if (clients[i] == INVALID_SOCKET)
+      continue;
+    if (shutdown(clients[i], SD_SEND) == SOCKET_ERROR) {
+      LOG_ERR("shutdown failed, error: %d", WSAGetLastError());
+    }
+    closesocket(clients[i]);
+  }
+  closesocket(server);
   WSACleanup();
   return 0;
 }
