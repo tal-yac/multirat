@@ -1,6 +1,5 @@
-#include "server.h"
-
 #include "log.h"
+#include "net_util.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -202,8 +201,7 @@ static void *read_ratpacket(ratpacket_t *p, int *allocated) {
   case RAT_PACKET_TURN_OFF:
   case RAT_PACKET_TURN_ON:
   default:
-    LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(p->op),
-              p->op);
+    LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(p->op), p->op);
     break;
   }
   return p;
@@ -223,8 +221,7 @@ static void handle_client(SOCKET client) {
     }
     if (!p->data_len)
       continue;
-    if (send(client, (char *)p, sizeof(*p) + p->data_len, 0) ==
-        SOCKET_ERROR) {
+    if (send(client, (char *)p, sizeof(*p) + p->data_len, 0) == SOCKET_ERROR) {
       LOG_ERR("send failed with %d", WSAGetLastError());
     }
     if (!allocated)

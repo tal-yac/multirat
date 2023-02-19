@@ -20,10 +20,10 @@ client: client.o ${OBJECTS}
 net_util.o: net_util.c net_util.h
 	gcc ${CCFLAGS} $< -o $@
 
-client.o: client.c client.h log.h commands.h
+client.o: client.c log.h commands.h
 	gcc ${CCFLAGS} $< -o $@
 
-server.o: server.c server.h log.h commands.h
+server.o: server.c log.h commands.h
 	gcc ${CCFLAGS} $< -o $@
 
 ratpacket.o: ratpacket.c ratpacket.h

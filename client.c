@@ -7,7 +7,6 @@
 #include <string.h>
 #include <winsock.h>
 
-
 static SOCKET init_client() {
   AddrInfo *result, *ptr, hints;
   result = ptr = NULL;
