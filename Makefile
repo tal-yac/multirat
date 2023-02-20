@@ -15,7 +15,7 @@ server: server.o ${OBJECTS}
 	gcc ${CFLAGS} $< ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB} -lpthread
 
 client: client.o ${OBJECTS}
-	gcc ${CFLAGS} $< ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
+	gcc ${CFLAGS} $< ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB} -lpthread
 
 net_util.o: net_util.c net_util.h
 	gcc ${CCFLAGS} $< -o $@

