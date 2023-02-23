@@ -1,6 +1,5 @@
 #pragma once
 
-#include <winsock2.h>
 #define LOCAL_HOST "127.0.0.1"
 #define DEFAULT_PORT "8000"
 #define MAX_CLIENTS 10
