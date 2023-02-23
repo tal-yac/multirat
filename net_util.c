@@ -1,6 +1,5 @@
 #include "net_util.h"
 
-
 static void setaddrinfoserver(AddrInfo *ai) {
   ai->ai_family = AF_INET;
   ai->ai_socktype = SOCK_STREAM;
@@ -17,4 +16,9 @@ static void setaddrinfoclient(AddrInfo *ai) {
 void setaddrinfo(AddrInfo *ai, LaunchOption lo) {
   ZeroMemory(ai, sizeof(*ai));
   (lo == SERVER) ? setaddrinfoserver(ai) : setaddrinfoclient(ai);
+}
+
+void close_client(SOCKET *client) {
+  closesocket(*client);
+  *client = INVALID_SOCKET;
 }

