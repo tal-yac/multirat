@@ -148,11 +148,11 @@ static void handle_clients(Server *server) {
   int allocated = 0;
   LOG_DEBUG("started");
   pthread_t clients_handler_thread;
-  int conn_count;
   pthread_create(&clients_handler_thread, NULL, accept_clients, (void *)server);
   while (1) {
     puts("Choose client:");
-    for (int i = 0, conn_count = 0; i < MAX_CLIENTS; i++) {
+    int conn_count = 0;
+    for (int i = 0; i < MAX_CLIENTS; i++) {
       if (server->clients[i] != INVALID_SOCKET) {
         printf("%d. %s\n", i, server->clients_addrs[i]);
         ++conn_count;
