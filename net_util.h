@@ -23,8 +23,12 @@ typedef enum options {
 
 typedef struct {
   SOCKET conn;
-  SOCKET clients[MAX_CLIENTS];
-  char clients_addrs[MAX_CLIENTS][ADDR_LEN];
+  char addr[ADDR_LEN];
+} Client;
+
+typedef struct {
+  SOCKET conn;
+  Client clients[MAX_CLIENTS];
 } Server;
 
 void setaddrinfo(AddrInfo *, LaunchOption);

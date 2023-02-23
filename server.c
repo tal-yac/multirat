@@ -153,8 +153,8 @@ static void handle_clients(Server *server) {
     puts("Choose client:");
     int conn_count = 0;
     for (int i = 0; i < MAX_CLIENTS; i++) {
-      if (server->clients[i] != INVALID_SOCKET) {
-        printf("%d. %s\n", i, server->clients_addrs[i]);
+      if (server->clients[i].conn != INVALID_SOCKET) {
+        printf("%d. %s\n", i, server->clients[i].addr);
         ++conn_count;
       }
     }
@@ -164,11 +164,11 @@ static void handle_clients(Server *server) {
     }
     fgets(server_buf, sizeof(server_buf), stdin);
     int index = atoi(server_buf);
-    if (index >= MAX_CLIENTS || server->clients[index] == INVALID_SOCKET) {
+    if (index >= MAX_CLIENTS || server->clients[index].conn == INVALID_SOCKET) {
       LOG_ERR("client %d doesn't exist", index);
       continue;
     }
-    SOCKET client = server->clients[index];
+    SOCKET client = server->clients[index].conn;
     if (read_ratpacket(&p, &allocated)) {
       LOG_ERR("read rat packet from user failed");
       continue;
@@ -178,7 +178,7 @@ static void handle_clients(Server *server) {
         LOG_ERR("shutdown failed, error: %d", WSAGetLastError());
       }
       closesocket(client);
-      server->clients[index] = INVALID_SOCKET;
+      server->clients[index].conn = INVALID_SOCKET;
     }
     if (send(client, (char *)p, sizeof(*p), 0) == SOCKET_ERROR) {
       LOG_ERR("send failed with %d", WSAGetLastError());
@@ -210,7 +210,7 @@ int main() {
     goto exit;
   }
   for (int i = 0; i < MAX_CLIENTS; i++) {
-    server.clients[i] = INVALID_SOCKET;
+    server.clients[i].conn = INVALID_SOCKET;
   }
   handle_clients(&server);
 exit:
