@@ -15,19 +15,18 @@ static void init_server_socket(SOCKET *server) {
   AddrInfo *result = NULL;
   setaddrinfo(&hints);
   if (getaddrinfo(NULL, DEFAULT_PORT, &hints, &result) != 0) {
-    LOG_ERR("getaddrinfo failed %d", WSAGetLastError());
+    LOG_ERR("getaddrinfo failed (%d)", WSAGetLastError());
     *server = INVALID_SOCKET;
     return;
   }
   *server = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
   if (*server == INVALID_SOCKET) {
-    printf("error: %d\n", WSAGetLastError());
+    LOG_ERR("%d\n", WSAGetLastError());
     freeaddrinfo(result);
     return;
   }
-  // binding the socket
   if (bind(*server, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR) {
-    printf("bind failed, error: %d\n", WSAGetLastError());
+    LOG_ERR("bind failed (%d)\n", WSAGetLastError());
     freeaddrinfo(result);
     closesocket(*server);
     *server = INVALID_SOCKET;
@@ -35,10 +34,8 @@ static void init_server_socket(SOCKET *server) {
   }
   freeaddrinfo(result);
   result = NULL;
-  // listening
-  printf("listening...\n");
   if (listen(*server, SOMAXCONN) == SOCKET_ERROR) {
-    printf("listen failed, error: %d\n", WSAGetLastError());
+    LOG_ERR("listen failed (%d)\n", WSAGetLastError());
     closesocket(*server);
     *server = INVALID_SOCKET;
     return;
