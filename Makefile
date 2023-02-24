@@ -19,10 +19,10 @@ endif
 CCFLAGS += -DLOG_LEVEL=${LOG_LEVEL}
 
 server: clean ${OBJECTS}
-	gcc ${CFLAGS} ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB} -lpthread
+	gcc ${CFLAGS} ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
 
 client: clean ${OBJECTS}
-	gcc ${CFLAGS} ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB} -lpthread
+	gcc ${CFLAGS} ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB}
 
 net_util.o: net_util.c net_util.h
 	gcc ${CCFLAGS} $< -o $@
