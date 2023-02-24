@@ -1,4 +1,4 @@
-CFLAGS := -g -std=gnu11
+CFLAGS := -std=gnu11 -O2
 WARNNINGS := -Wall -Wextra -Werror
 CCFLAGS := -c ${CFLAGS} ${WARNINGS}
 WIN_TCPIP_LIB := Ws2_32
