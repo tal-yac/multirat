@@ -11,19 +11,18 @@
 
 #define FOREACH_RAT_OPCODE                                                     \
   _(ECHO, 0, "Echo")                                                           \
-  _(REGISTER_CLIENT, 1, "Register_client")                                     \
-  _(UNREGISTER, 2, "Unregister")                                               \
-  _(CONNECT_CLIENT, 3, "Connect_client")                                       \
-  _(DISCONNECT, 4, "Disconnect")                                               \
-  _(KEYLOG, 5, "Keylog")                                                       \
-  _(TURN_OFF, 6, "Keylog_off")                                                 \
-  _(TURN_ON, 7, "Keylog_on")                                                   \
-  _(RESTART, 8, "Restart")                                                     \
-  _(SHUTDOWN, 9, "Shutdown")                                                   \
-  _(FILE, 10, "File")                                                          \
-  _(REGISTRY, 11, "Registry")                                                  \
-  _(CMD, 12, "Cmd")                                                            \
-  _(ALERT, 13, "Alert")
+  _(INSTALL, 1, "Install")                                                     \
+  _(UNINSTALL, 2, "Uninstall")                                                 \
+  _(DISCONNECT, 3, "Disconnect")                                               \
+  _(KEYLOG, 4, "Keylog")                                                       \
+  _(TURN_OFF, 5, "Keylog_off")                                                 \
+  _(TURN_ON, 6, "Keylog_on")                                                   \
+  _(RESTART, 7, "Restart")                                                     \
+  _(SHUTDOWN, 8, "Shutdown")                                                   \
+  _(FILE, 9, "File")                                                           \
+  _(REGISTRY, 10, "Registry")                                                  \
+  _(CMD, 11, "Cmd")                                                            \
+  _(ALERT, 12, "Alert")
 
 typedef enum {
 #define _(s, v, n) RAT_PACKET_##s = (v),

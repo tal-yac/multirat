@@ -12,6 +12,6 @@ int remove_from_registry(HKEY hkey, char *path, char *name);
 
 int install_to_registry(char *name);
 
-int uninstall_to_registry(char *name);
+int uninstall_from_registry(char *name);
 
 void popup(const char *title, const char *text);

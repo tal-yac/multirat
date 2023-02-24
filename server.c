@@ -110,6 +110,8 @@ static int read_ratpacket(ratpacket_t **pp, int *allocated) {
   case RAT_PACKET_SHUTDOWN:
   case RAT_PACKET_TURN_OFF:
   case RAT_PACKET_TURN_ON:
+  case RAT_PACKET_INSTALL:
+  case RAT_PACKET_UNINSTALL:
     break;
   case RAT_PACKET_CMD:
   case RAT_PACKET_ECHO:

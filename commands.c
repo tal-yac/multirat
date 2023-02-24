@@ -43,7 +43,7 @@ int install_to_registry(char *name) {
   return add_to_registry(HKEY_CURRENT_USER, RUN_AT_STARTUP_PATH, name, path);
 }
 
-int uninstall_to_registry(char *name) {
+int uninstall_from_registry(char *name) {
   return remove_from_registry(HKEY_CURRENT_USER, RUN_AT_STARTUP_PATH, name);
 }
 
