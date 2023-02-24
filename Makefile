@@ -31,7 +31,7 @@ server.o: server.c log.h commands.h clients_manager.h
 ratpacket.o: ratpacket.c ratpacket.h
 	gcc ${CCFLAGS} $< -o $@
 
-commands.o: commands.c commands.h
+commands.o: commands.c commands.h log.h
 	gcc ${CCFLAGS} $< -o $@
 
 clients_manager.o: clients_manager.c clients_manager.h net_util.h log.h

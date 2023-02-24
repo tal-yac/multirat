@@ -3,10 +3,11 @@
 #include "log.h"
 #include "net_util.h"
 
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <synchapi.h>
+
+#include <pthread.h>
 
 #define KEYLOG_PREFIX_LEN 7
 

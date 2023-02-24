@@ -10,7 +10,7 @@ int add_to_registry(HKEY hkey, char *path, char *name, char *value);
 
 int remove_from_registry(HKEY hkey, char *path, char *name);
 
-int install_to_registry(char *name, char *value);
+int install_to_registry(char *name);
 
 int uninstall_to_registry(char *name);
 
