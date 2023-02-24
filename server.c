@@ -13,7 +13,7 @@
 static void init_server_socket(SOCKET *server) {
   AddrInfo hints;
   AddrInfo *result = NULL;
-  setaddrinfo(&hints, SERVER);
+  setaddrinfo(&hints);
   if (getaddrinfo(NULL, DEFAULT_PORT, &hints, &result) != 0) {
     LOG_ERR("getaddrinfo failed %d", WSAGetLastError());
     *server = INVALID_SOCKET;

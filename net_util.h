@@ -14,13 +14,6 @@
 typedef struct addrinfo AddrInfo;
 typedef struct sockaddr_in SocketAddress;
 
-typedef enum options {
-  UNKNOWN_LAUNCH_OPTION = -1,
-  QUIT,
-  SERVER,
-  CLIENT
-} LaunchOption;
-
 typedef struct {
   SOCKET conn;
   char addr[ADDR_LEN];
@@ -31,6 +24,6 @@ typedef struct {
   Client clients[MAX_CLIENTS];
 } Server;
 
-void setaddrinfo(AddrInfo *, LaunchOption);
+void setaddrinfo(AddrInfo *);
 
 void close_client(SOCKET *client);
