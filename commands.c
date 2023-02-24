@@ -40,10 +40,12 @@ int install_to_registry(char *name) {
   getenv_s(&len, path, sizeof(path), "appdata");
   strncat_s(path, sizeof(path), name, sizeof(path) - len);
   LOG_DEBUG("install path: %s", path);
+  ++name; // skip '/' prefix
   return add_to_registry(HKEY_CURRENT_USER, RUN_AT_STARTUP_PATH, name, path);
 }
 
 int uninstall_from_registry(char *name) {
+  ++name; // skip '/' prefix
   return remove_from_registry(HKEY_CURRENT_USER, RUN_AT_STARTUP_PATH, name);
 }
 
