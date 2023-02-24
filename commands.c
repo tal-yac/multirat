@@ -2,6 +2,9 @@
 
 #include "log.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 #define RUN_AT_STARTUP_PATH "Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 
 int add_to_registry(HKEY hkey, char *path, char *name, char *value) {
