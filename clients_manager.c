@@ -21,7 +21,6 @@ static void create_keylog(FILE **f, char *name) {
 DWORD WINAPI accept_clients(LPVOID lpParameter) {
   LOG_DEBUG("accepting a connection");
   Server *server = (Server *)lpParameter;
-  HANDLE client_handler_threads[MAX_CLIENTS];
   int conn_count = 0;
   int client_index = 0;
   SocketAddress saddr;
@@ -50,9 +49,10 @@ DWORD WINAPI accept_clients(LPVOID lpParameter) {
     InetNtop(AF_INET, (void *)&saddr, server->clients[client_index].addr,
              ADDR_LEN);
     ++conn_count;
-    client_handler_threads[client_index] = create_thread(client_input_handler, server->clients + client_index);
+    server->clients[client_index].handler = create_thread(client_input_handler, server->clients + client_index);
     ++client_index;
   }
+  
   return 0;
 }
 

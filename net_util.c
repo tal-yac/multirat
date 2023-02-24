@@ -10,7 +10,8 @@ void setaddrinfo(AddrInfo *ai) {
   #endif // SERVER_SIDE
 }
 
-void close_client(SOCKET *client) {
-  closesocket(*client);
-  *client = INVALID_SOCKET;
+void close_client(Client *client) {
+  closesocket(client->conn);
+  CloseHandle(client->handler);
+  client->conn = INVALID_SOCKET;
 }

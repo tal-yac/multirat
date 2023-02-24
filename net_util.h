@@ -15,6 +15,7 @@ typedef struct sockaddr_in SocketAddress;
 
 typedef struct {
   SOCKET conn;
+  HANDLE handler;
   char addr[ADDR_LEN];
 } Client;
 
@@ -25,4 +26,4 @@ typedef struct {
 
 void setaddrinfo(AddrInfo *);
 
-void close_client(SOCKET *client);
+void close_client(Client *client);
