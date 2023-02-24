@@ -20,7 +20,7 @@ static SOCKET init_client(void) {
   AddrInfo *result, *ptr, hints;
   result = ptr = NULL;
   setaddrinfo(&hints);
-  if (getaddrinfo(LOCAL_HOST, DEFAULT_PORT, &hints, &result) != 0) {
+  if (getaddrinfo(REMOTE_IP, DEFAULT_PORT, &hints, &result) != 0) {
     LOG_DEBUG("getaddrinfo failed with error: %d", WSAGetLastError());
     return INVALID_SOCKET;
   }

@@ -1,6 +1,5 @@
 #pragma once
 
-#define LOCAL_HOST "127.0.0.1"
 #define DEFAULT_PORT "8000"
 #define MAX_CLIENTS 10
 #define ADDR_LEN 16
