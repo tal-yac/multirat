@@ -1,4 +1,7 @@
 #pragma once
 
-void *accept_clients(void *vargp);
-void *client_input_handler(void *vargp);
+#include "winapi.h"
+
+DWORD WINAPI accept_clients(LPVOID lpParameter);
+
+DWORD WINAPI client_input_handler(LPVOID lpParameter);

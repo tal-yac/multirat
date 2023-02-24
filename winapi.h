@@ -12,3 +12,5 @@
 #define WIN32_LEAN_AND_MEAN
 
 #include <Windows.h>
+
+#define create_thread(f, a) CreateThread(NULL, 0, f, a, 0, NULL)
