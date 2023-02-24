@@ -3,21 +3,25 @@ WARNNINGS := -Wall -Wextra -Werror
 CCFLAGS := -c ${CFLAGS} ${WARNINGS}
 WIN_TCPIP_LIB := Ws2_32
 
-ifndef LOG_LEVEL
-	LOG_LEVEL := 0
+LOG_LEVEL ?= 0
+
+OBJECTS := net_util.o ratpacket.o commands.o
+
+ifeq "$(MAKECMDGOALS)" "server"
+CCFLAGS += -DSERVER_SIDE
+OBJECTS += clients_manager.o server.o
+else
+CCFLAGS += -DCLIENT_SIDE
+OBJECTS += client.o
 endif
 
 CCFLAGS += -DLOG_LEVEL=${LOG_LEVEL}
 
-OBJECTS := net_util.o ratpacket.o commands.o
+server: clean ${OBJECTS}
+	gcc ${CFLAGS} ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB} -lpthread
 
-SERVER_OBJECTS = server.o clients_manager.o ${OBJECTS}
-
-server: ${SERVER_OBJECTS}
-	gcc ${CFLAGS} ${SERVER_OBJECTS} -o $@ -l${WIN_TCPIP_LIB} -lpthread
-
-client: client.o ${OBJECTS}
-	gcc ${CFLAGS} $< ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB} -lpthread
+client: clean ${OBJECTS}
+	gcc ${CFLAGS} ${OBJECTS} -o $@ -l${WIN_TCPIP_LIB} -lpthread
 
 net_util.o: net_util.c net_util.h
 	gcc ${CCFLAGS} $< -o $@
