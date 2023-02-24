@@ -147,15 +147,17 @@ static void handle_clients(Server *server) {
   pthread_t clients_handler_thread;
   pthread_create(&clients_handler_thread, NULL, accept_clients, (void *)server);
   while (1) {
-    puts("Choose client:");
     int conn_count = 0;
     for (int i = 0; i < MAX_CLIENTS; i++) {
-      if (server->clients[i].conn != INVALID_SOCKET) {
-        printf("%d. %s\n", i, server->clients[i].addr);
-        ++conn_count;
-      }
+      if (server->clients[i].conn == INVALID_SOCKET)
+        continue;
+      if (conn_count == 0)
+        puts("Choose client:");
+      printf("%d. %s\n", i, server->clients[i].addr);
+      ++conn_count;
     }
     if (!conn_count) {
+      puts("no clients connected, sleeping...");
       Sleep(1000 * 60);
       continue;
     }
