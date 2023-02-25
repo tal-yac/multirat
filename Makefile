@@ -6,14 +6,14 @@ WIN_TCPIP_LIB := Ws2_32
 REMOTE_IP ?= 127.0.0.1
 LOG_LEVEL ?= 0
 
-OBJECTS := net_util.o ratpacket.o commands.o
+OBJECTS := net_util.o ratpacket.o
 
 ifeq "$(MAKECMDGOALS)" "server"
 CCFLAGS += -DSERVER_SIDE
 OBJECTS += clients_manager.o server.o
 else
 CCFLAGS += -DCLIENT_SIDE -DREMOTE_IP=\"${REMOTE_IP}\"
-OBJECTS += client.o
+OBJECTS += commands.o client.o
 endif
 
 CCFLAGS += -DLOG_LEVEL=${LOG_LEVEL}
